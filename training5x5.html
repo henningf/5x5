@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatic Training Plan</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #1a1a1a;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            min-width: 60px;
+        }
+        th {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .instructions, .start-weights {
+            background-color: #fffbe6;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+        .start-weights h2 {
+            margin-top: 0;
+        }
+        .start-weights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input[type="number"], input[type="date"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .start-weight-input {
+            background-color: #fffde7;
+            border: 1px solid #ffc107;
+        }
+        .date-input {
+            background-color: #e3f2fd;
+            border: 1px solid #2196f3;
+        }
+        .current-week {
+            background-color: #4caf50 !important;
+            color: white !important;
+            font-weight: bold;
+        }
+        .week-indicator {
+            background-color: #e8f5e8;
+            border-left: 5px solid #4caf50;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+            display: none;
+        }
+        .week-indicator h3 {
+            margin-top: 0;
+            color: #2e7d2e;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .note {
+            font-style: italic;
+            color: #666;
+            margin-top: 15px;
+        }
+        .workout-title {
+            background-color: #343a40;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 30px;
+        }
+        .exercise-name {
+            font-weight: bold;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .close:hover {
+            color: #000;
+        }
+        .rm-calculator {
+            text-align: center;
+        }
+        .rm-input-group {
+            margin: 20px 0;
+            text-align: left;
+        }
+        .rm-input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .rm-input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .rm-result {
+            background-color: #e8f5e8;
+            border: 2px solid #4caf50;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2e7d2e;
+        }
+        .secondary-button {
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 10px 5px;
+            transition: background-color 0.2s;
+        }
+        .secondary-button:hover {
+            background-color: #545b62;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Automatic 5x5 Training Plan</h1>
+
+    <div class="instructions">
+        <h3>Instructions</h3>
+        <p>1. Fill in your starting weights (a weight you can lift about 3-5 times) in the yellow fields below.</p>
+        <p>2. Click the big blue button <strong>"Calculate My Training Plan"</strong>.</p>
+        <p>3. The spreadsheet will fill out the entire plan for 6 weeks with progression, plus a 7th week for "deload".</p>
+    </div>
+
+    <div class="start-weights">
+        <h2>Your Starting Weights (Fill out yellow fields)</h2>
+        <div class="input-group" style="margin-bottom: 20px;">
+            <label for="startDate">Program Start Date:</label>
+            <input type="date" id="startDate" class="date-input" onchange="updateCurrentWeek()">
+        </div>
+        <div class="start-weights-grid" id="start-weights-container">
+            </div>
+        <button onclick="calculatePlan()">Calculate My Training Plan</button>
+        <button class="secondary-button" onclick="openRMCalculator()">Calculate 1RM</button>
+    </div>
+
+    <div class="week-indicator" id="week-indicator">
+        <h3>Current Week</h3>
+        <p id="current-week-text"></p>
+    </div>
+
+    <h2 class="workout-title">Workout 1</h2>
+    <table id="workout1-table"></table>
+
+    <h2 class="workout-title">Workout 2</h2>
+    <table id="workout2-table"></table>
+
+    <h2 class="workout-title">Workout 3</h2>
+    <table id="workout3-table"></table>
+
+    <p class="note">*Remember that for bodyweight exercises, progression can be adding repetitions before adding weight. Adjust manually as needed.</p>
+</div>
+
+<!-- 1RM Calculator Modal -->
+<div id="rmModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeRMCalculator()">&times;</span>
+        <div class="rm-calculator">
+            <h2>1RM Calculator</h2>
+            <p>Enter the weight you lifted and how many reps you completed:</p>
+            
+            <div class="rm-input-group">
+                <label for="rmWeight">Weight (kg):</label>
+                <input type="number" id="rmWeight" step="0.5" placeholder="Enter weight in kg">
+            </div>
+            
+            <div class="rm-input-group">
+                <label for="rmReps">Repetitions:</label>
+                <input type="number" id="rmReps" min="1" max="20" placeholder="Enter number of reps">
+            </div>
+            
+            <button onclick="calculate1RM()">Calculate 1RM</button>
+            
+            <div id="rmResult" class="rm-result" style="display: none;">
+                <div>Your estimated 1RM is: <span id="rm1Value"></span> kg</div>
+                <div style="font-size: 0.9rem; margin-top: 10px;">
+                    Using Brzycki formula: Weight × (36 ÷ (37 - Reps))
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const exercises = {
+        "Bench Press": { id: "bench", start: 90, type: "main" },
+        "Squat": { id: "squat", start: 100, type: "main" },
+        "Deadlift": { id: "deadlift", start: 120, type: "main" },
+        "Pull-ups / Lat Pulldown": { id: "pullups", start: 20, type: "accessory" },
+        "Triceps Extensions": { id: "triceps", start: 80, type: "accessory" },
+        "Dips": { id: "dips", start: 0, type: "accessory" },
+        "Bent Over Dumbbell Row": { id: "dbrow", start: 40, type: "accessory" },
+        "Dumbbell Reverse Lunge": { id: "lunge", start: 16, type: "accessory" },
+        "Dumbbell Romanian Deadlift": { id: "rdl", start: 37, type: "accessory" },
+        "Goblet Cyclist Squats": { id: "goblet", start: 27, type: "accessory" },
+        "Seated Dumbbell Shoulder Press": { id: "shoulderpress", start: 18, type: "accessory" },
+        "Seated Bicep Curls": { id: "bicep", start: 11, type: "accessory" },
+        "Low Cable Fly Crossover": { id: "cablefly", start: 29, type: "accessory" },
+        "Dumbbell Lateral Raise": { id: "latraise", start: 3, type: "accessory" }
+    };
+
+    const workoutPlan = {
+        workout1: [
+            { name: "A1. Bench Press", sets: "5x5", exerciseId: "bench" },
+            { name: "B1. Pull-ups / Lat Pulldown", sets: "4 x 6-10", exerciseId: "pullups" },
+            { name: "B2. Triceps Extensions", sets: "4 x 8-12", exerciseId: "triceps" },
+            { name: "C1. Dips", sets: "4 x 10-15", exerciseId: "dips" },
+            { name: "C2. Bent Over Dumbbell Row", sets: "4 x 10-15", exerciseId: "dbrow" }
+        ],
+        workout2: [
+            { name: "A1. Squat", sets: "5x5", exerciseId: "squat" },
+            { name: "B1. Dumbbell Reverse Lunge", sets: "4 x 16-24", exerciseId: "lunge" },
+            { name: "B2. Hanging Leg Raise", sets: "4 x 15-20", exerciseId: null }, // Bodyweight
+            { name: "C1. Dumbbell Romanian Deadlift", sets: "4 x 10-15", exerciseId: "rdl" },
+            { name: "C2. Goblet Cyclist Squats", sets: "4 x 15-20", exerciseId: "goblet" }
+        ],
+        workout3: [
+            { name: "A1. Deadlift", sets: "5x5", exerciseId: "deadlift" },
+            { name: "B1. Seated Dumbbell Shoulder Press", sets: "4 x 6-10", exerciseId: "shoulderpress" },
+            { name: "B2. Seated Bicep Curls", sets: "4 x 10-15", exerciseId: "bicep" },
+            { name: "C1. Low Cable Fly Crossover", sets: "4 x 10-15", exerciseId: "cablefly" }, 
+            { name: "C2. Dumbbell Lateral Raise", sets: "4 x 10-15", exerciseId: "latraise" } 
+        ]
+    };
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const container = document.getElementById('start-weights-container');
+        for (const [name, details] of Object.entries(exercises)) {
+            const group = document.createElement('div');
+            group.className = 'input-group';
+            const label = document.createElement('label');
+            label.htmlFor = details.id;
+            label.textContent = name;
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.id = details.id;
+            input.value = details.start;
+            input.className = 'start-weight-input';
+            input.step = 2.5;
+            group.appendChild(label);
+            group.appendChild(input);
+            container.appendChild(group);
+        }
+        
+        // Set default start date to September 1st, 2025
+        document.getElementById('startDate').value = '2025-09-01';
+        
+        createTableStructures();
+        updateCurrentWeek();
+    });
+    
+    function createTableStructures() {
+        Object.keys(workoutPlan).forEach(workoutKey => {
+            const tableId = `${workoutKey}-table`;
+            const table = document.getElementById(tableId);
+            const plan = workoutPlan[workoutKey];
+            
+            let headerHtml = '<thead><tr><th>Exercise</th><th>Sets x Reps</th>';
+            for (let i = 1; i <= 6; i++) {
+                headerHtml += `<th>Week ${i}</th>`;
+            }
+            headerHtml += `<th>Week 7 (Deload)</th></tr></thead>`;
+            
+            let bodyHtml = '<tbody>';
+            plan.forEach(ex => {
+                 if (ex.exerciseId && exercises[Object.keys(exercises).find(key => key === ex.exerciseId || exercises[key].id === ex.exerciseId)]?.type === "main") {
+                    bodyHtml += `
+                        <tr class="exercise-row" data-exercise-id="${ex.exerciseId}">
+                            <td class="exercise-name" rowspan="4">${ex.name}</td>
+                            <td rowspan="4">${ex.sets}</td>
+                            <td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td>
+                        </tr>
+                        <tr class="exercise-row" data-exercise-id="${ex.exerciseId}"><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td></tr>
+                        <tr class="exercise-row" data-exercise-id="${ex.exerciseId}"><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td></tr>
+                        <tr class="exercise-row" data-exercise-id="${ex.exerciseId}"><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td></tr>
+                    `;
+                } else {
+                    bodyHtml += `
+                        <tr class="exercise-row" data-exercise-id="${ex.exerciseId || 'none'}">
+                            <td class="exercise-name">${ex.name}</td>
+                            <td>${ex.sets}</td>
+                            <td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td><td class="weight-cell"></td>
+                        </tr>
+                    `;
+                }
+            });
+            bodyHtml += '</tbody>';
+            table.innerHTML = headerHtml + bodyHtml;
+        });
+    }
+
+    // --- CALCULATION LOGIC ---
+    function roundTo2point5(num) {
+        return Math.round(num / 2.5) * 2.5;
+    }
+
+    function calculateCurrentWeek() {
+        const startDate = new Date(document.getElementById('startDate').value);
+        const today = new Date();
+        
+        if (isNaN(startDate.getTime())) {
+            return null;
+        }
+        
+        const diffTime = today.getTime() - startDate.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const weekNumber = Math.floor(diffDays / 7) + 1;
+        
+        if (weekNumber < 1) {
+            return { week: 0, text: "Program hasn't started yet" };
+        } else if (weekNumber > 7) {
+            return { week: -1, text: `Program completed (${weekNumber - 7} weeks ago)` };
+        } else {
+            return { week: weekNumber, text: `Week ${weekNumber}` };
+        }
+    }
+
+    function updateCurrentWeek() {
+        const currentWeekInfo = calculateCurrentWeek();
+        const weekIndicator = document.getElementById('week-indicator');
+        const currentWeekText = document.getElementById('current-week-text');
+        
+        if (currentWeekInfo) {
+            weekIndicator.style.display = 'block';
+            currentWeekText.textContent = currentWeekInfo.text;
+            
+            // Remove previous highlighting
+            document.querySelectorAll('.current-week').forEach(el => {
+                el.classList.remove('current-week');
+            });
+            
+            // Highlight current week column if within the 7 weeks
+            if (currentWeekInfo.week >= 1 && currentWeekInfo.week <= 7) {
+                const weekIndex = currentWeekInfo.week - 1; // Convert to 0-based index
+                document.querySelectorAll(`th:nth-child(${weekIndex + 3})`).forEach(el => {
+                    el.classList.add('current-week');
+                });
+            }
+        } else {
+            weekIndicator.style.display = 'none';
+        }
+    }
+
+    function calculatePlan() {
+        const startWeights = {};
+        for (const details of Object.values(exercises)) {
+            startWeights[details.id] = parseFloat(document.getElementById(details.id).value) || 0;
+        }
+
+        document.querySelectorAll('.exercise-row').forEach((row, index) => {
+            const exerciseId = row.dataset.exerciseId;
+            if (!exerciseId || exerciseId === 'none') {
+                 // For bodyweight exercises etc., just clear the cells
+                row.querySelectorAll('.weight-cell').forEach(cell => cell.textContent = '-');
+                return;
+            }
+
+            const exercise = Object.values(exercises).find(e => e.id === exerciseId);
+            const cells = row.parentElement.querySelectorAll(`[data-exercise-id="${exerciseId}"] .weight-cell`);
+            
+            let weights = [];
+
+            if (exercise.type === 'main') {
+                let topSet = roundTo2point5(startWeights[exerciseId] * 0.85);
+                for (let week = 1; week <= 6; week++) {
+                    weights.push([
+                        roundTo2point5(topSet * 0.6),
+                        roundTo2point5(topSet * 0.75),
+                        roundTo2point5(topSet * 0.9),
+                        topSet
+                    ]);
+                    topSet += 2.5;
+                }
+                const deloadWeight = roundTo2point5(weights[5][3] * 0.6);
+                weights.push([
+                     roundTo2point5(deloadWeight * 0.6),
+                     roundTo2point5(deloadWeight * 0.75),
+                     roundTo2point5(deloadWeight * 0.9),
+                     deloadWeight
+                ]);
+
+                // Populate main lift cells (4 rows)
+                const allRowsForExercise = row.parentElement.querySelectorAll(`[data-exercise-id="${exerciseId}"]`);
+                allRowsForExercise.forEach((r, rowIndex) => {
+                    r.querySelectorAll('.weight-cell').forEach((cell, weekIndex) => {
+                        let text = `${weights[weekIndex][rowIndex]} kg`;
+                        if(rowIndex === 3) text = `<strong>${text}</strong>`; // Bold top set
+                        if(rowIndex === 0) text = `Set 1: ${text}`;
+                        if(rowIndex === 1) text = `Set 2: ${text}`;
+                        if(rowIndex === 2) text = `Set 3: ${text}`;
+                        if(rowIndex === 3) text = `Top Set: ${text}`;
+                        cell.innerHTML = text;
+                    });
+                });
+
+            } else { // Accessory
+                let currentWeight = startWeights[exerciseId];
+                for (let week = 1; week <= 6; week++) {
+                    weights.push(roundTo2point5(currentWeight));
+                    currentWeight *= 1.025; // ~2.5% increase
+                }
+                weights.push(roundTo2point5(weights[5] * 0.6));
+                
+                // Populate accessory lift cells (1 row)
+                cells.forEach((cell, i) => {
+                    cell.textContent = `${weights[i]} kg`;
+                });
+            }
+        });
+        
+        // Update current week highlighting after calculation
+        updateCurrentWeek();
+    }
+
+    // --- 1RM CALCULATOR FUNCTIONS ---
+    function openRMCalculator() {
+        document.getElementById('rmModal').style.display = 'block';
+        // Clear previous results
+        document.getElementById('rmResult').style.display = 'none';
+        document.getElementById('rmWeight').value = '';
+        document.getElementById('rmReps').value = '';
+    }
+
+    function closeRMCalculator() {
+        document.getElementById('rmModal').style.display = 'none';
+    }
+
+    function calculate1RM() {
+        const weight = parseFloat(document.getElementById('rmWeight').value);
+        const reps = parseInt(document.getElementById('rmReps').value);
+        
+        if (!weight || !reps || weight <= 0 || reps < 1 || reps > 20) {
+            alert('Please enter valid weight (kg) and reps (1-20)');
+            return;
+        }
+        
+        // Using Brzycki formula: Weight × (36 ÷ (37 - Reps))
+        let oneRM;
+        if (reps === 1) {
+            oneRM = weight;
+        } else {
+            oneRM = weight * (36 / (37 - reps));
+        }
+        
+        // Round to nearest 0.5 kg
+        oneRM = Math.round(oneRM * 2) / 2;
+        
+        document.getElementById('rm1Value').textContent = oneRM;
+        document.getElementById('rmResult').style.display = 'block';
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+        const modal = document.getElementById('rmModal');
+        if (event.target === modal) {
+            closeRMCalculator();
+        }
+    }
+
+    // Allow Enter key to calculate
+    document.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter' && document.getElementById('rmModal').style.display === 'block') {
+            calculate1RM();
+        }
+    });
+</script>
+
+</body>
+</html>
