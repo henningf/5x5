@@ -21,6 +21,46 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
+        
+        /* Mobile typography adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+            .container {
+                padding: 15px;
+                border-radius: 0;
+                margin: 0;
+            }
+            h1 {
+                font-size: 1.8rem;
+                text-align: center;
+            }
+            h2 {
+                font-size: 1.4rem;
+            }
+            h3 {
+                font-size: 1.2rem;
+            }
+            .instructions, .start-weights {
+                padding: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.6rem;
+            }
+            h2 {
+                font-size: 1.3rem;
+            }
+            .workout-title {
+                padding: 8px;
+                font-size: 1.2rem;
+                text-align: center;
+            }
+        }
         h1, h2, h3 {
             color: #1a1a1a;
         }
@@ -29,18 +69,49 @@
             border-collapse: collapse;
             margin-bottom: 25px;
         }
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 25px;
+        }
         th, td {
             border: 1px solid #ddd;
             padding: 10px;
             text-align: left;
-            min-width: 60px;
+            min-width: 80px;
+            white-space: nowrap;
         }
         th {
             background-color: #e9ecef;
             font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         tr:nth-child(even) {
             background-color: #f9f9f9;
+        }
+        
+        /* Mobile-specific table adjustments */
+        @media (max-width: 768px) {
+            th, td {
+                padding: 8px 6px;
+                font-size: 0.9rem;
+                min-width: 70px;
+            }
+            .exercise-name {
+                min-width: 120px;
+            }
+            th:first-child, td:first-child {
+                position: sticky;
+                left: 0;
+                background-color: #fff;
+                z-index: 5;
+            }
+            th:first-child {
+                background-color: #e9ecef;
+                z-index: 15;
+            }
         }
         .instructions, .start-weights {
             background-color: #fffbe6;
@@ -56,6 +127,21 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 15px;
+        }
+        
+        /* Mobile adjustments for input grid */
+        @media (max-width: 768px) {
+            .start-weights-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .start-weights-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
         }
         .input-group {
             display: flex;
@@ -109,9 +195,24 @@
             cursor: pointer;
             margin-top: 20px;
             transition: background-color 0.2s;
+            min-height: 44px; /* Better touch target */
         }
         button:hover {
             background-color: #0056b3;
+        }
+        
+        /* Button layout improvements for mobile */
+        @media (max-width: 768px) {
+            .secondary-button {
+                display: block;
+                width: 100%;
+                margin: 10px 0;
+                padding: 12px;
+            }
+            button, .secondary-button {
+                font-size: 1rem;
+                min-height: 48px; /* Larger touch target on mobile */
+            }
         }
         .note {
             font-style: italic;
@@ -146,6 +247,18 @@
             width: 90%;
             max-width: 500px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        /* Mobile modal adjustments */
+        @media (max-width: 768px) {
+            .modal-content {
+                margin: 5% auto;
+                padding: 20px;
+                width: 95%;
+                max-height: 95vh;
+            }
         }
         .close {
             color: #aaa;
@@ -198,6 +311,9 @@
             font-size: 1rem;
             margin: 10px 5px;
             transition: background-color 0.2s;
+            min-height: 44px; /* Better touch target */
+            display: inline-block;
+            width: auto;
         }
         .secondary-button:hover {
             background-color: #545b62;
@@ -234,13 +350,19 @@
     </div>
 
     <h2 class="workout-title">Workout 1</h2>
-    <table id="workout1-table"></table>
+    <div class="table-wrapper">
+        <table id="workout1-table"></table>
+    </div>
 
     <h2 class="workout-title">Workout 2</h2>
-    <table id="workout2-table"></table>
+    <div class="table-wrapper">
+        <table id="workout2-table"></table>
+    </div>
 
     <h2 class="workout-title">Workout 3</h2>
-    <table id="workout3-table"></table>
+    <div class="table-wrapper">
+        <table id="workout3-table"></table>
+    </div>
 
     <p class="note">*Remember that for bodyweight exercises, progression can be adding repetitions before adding weight. Adjust manually as needed.</p>
 </div>
